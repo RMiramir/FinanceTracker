@@ -1,5 +1,6 @@
 ﻿using FinanceTracker.Data;
 using FinanceTracker.DTO;
+using FinanceTracker.DTO.Accounts;
 using FinanceTracker.Models;
 using FinanceTracker.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -60,7 +61,7 @@ public class AccountsController : ControllerBase
         var updateAcc = await _accountService.UpdateAsync(id, updateAccountDto, ct);
         if (updateAcc is null)
         {
-            return NotFound(new { message = $"Кошелёк с таким ID {id} не найден" });
+            return BadRequest(new { message = $"Кошелёк с таким ID {id} не найден" });
         }
 
         return Ok(updateAcc);

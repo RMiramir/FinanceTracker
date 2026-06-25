@@ -1,4 +1,5 @@
-﻿namespace FinanceTracker.DTO;
+﻿
+namespace FinanceTracker.DTO.Accounts;
 
 public class UpdateAccountDto
 {

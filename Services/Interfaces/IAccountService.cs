@@ -1,4 +1,4 @@
-﻿using FinanceTracker.DTO;
+﻿using FinanceTracker.DTO.Accounts;
 using FluentResults;
 
 namespace FinanceTracker.Services.Interfaces;

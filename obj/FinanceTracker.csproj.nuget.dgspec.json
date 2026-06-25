@@ -77,18 +77,6 @@
             "Scalar.AspNetCore": {
               "target": "Package",
               "version": "[2.16.5, )"
-            },
-            "Swashbuckle.AspNetCore.Swagger": {
-              "target": "Package",
-              "version": "[10.2.3, )"
-            },
-            "Swashbuckle.AspNetCore.SwaggerGen": {
-              "target": "Package",
-              "version": "[10.2.3, )"
-            },
-            "Swashbuckle.AspNetCore.SwaggerUI": {
-              "target": "Package",
-              "version": "[10.2.3, )"
             }
           },
           "imports": [
