@@ -1,0 +1,6 @@
+@FinanceTracker_HostAddress = http://localhost:5244
+
+GET {{FinanceTracker_HostAddress}}/
+Accept: application/json
+
+###

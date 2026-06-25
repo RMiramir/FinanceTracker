@@ -1,0 +1,9 @@
+﻿/FinanceTracker.csproj
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+.idea/
+*.db
+*.mdf
+*.ldf
