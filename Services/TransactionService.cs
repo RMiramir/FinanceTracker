@@ -5,6 +5,7 @@ using FinanceTracker.Exceptions;
 using FinanceTracker.Models;
 using FinanceTracker.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace FinanceTracker.Services;
 
@@ -25,7 +26,8 @@ public class TransactionService : ITransactionService
             .Include(c => c.Category)
             .Include(t => t.TransactionTags)
                 .ThenInclude(tt => tt.Tag).ToListAsync(ct);
-
+        
+        
         var list = new List<TransactionResponseDto>();
         foreach (var t in transactions)
         {
@@ -74,9 +76,9 @@ public class TransactionService : ITransactionService
 
     }
 
-    public async Task<TransactionResponseDto?> GetByIdAsync(int id, CancellationToken ct)
+    public async Task<TransactionResponseDto> GetByIdAsync(int id, CancellationToken ct)
     {
-        return await _context.Transactions.Where(t => t.Id == id)
+        var transaction = await _context.Transactions.Where(t => t.Id == id)
             .Select(t => new TransactionResponseDto
             {
                 Id = t.Id,
@@ -95,6 +97,11 @@ public class TransactionService : ITransactionService
                 }).ToList()
             }).FirstOrDefaultAsync(ct);
 
+        if (transaction is null)
+            throw new NotFoundException($"Транзакция с таким ID {id} не найдена");
+
+        return transaction;
+
     }
 
     public async Task<TransactionResponseDto> CreateAsync(CreateTransactionDto dto, CancellationToken ct)
@@ -105,7 +112,7 @@ public class TransactionService : ITransactionService
 
         if (!accountExists || !categoryExists || existingTags != dto.TagIds.Distinct().Count())
         {
-            throw new TransactionBadRequestException($"Неверный AccountId, CategoryId или TagIds");
+            throw new ConflictException($"Транзакция с таким AccountId, CategoryId или TagIds уже существует");
         }
         
         var newTransaction = new Transaction
@@ -163,14 +170,14 @@ public class TransactionService : ITransactionService
 
     }
 
-    public async Task<TransactionResponseDto?> UpdateAsync(int id, UpdateTransactionDto dto, CancellationToken ct)
+    public async Task<TransactionResponseDto> UpdateAsync(int id, UpdateTransactionDto dto, CancellationToken ct)
     {
         var updateTransaction = await _context.Transactions
             .Include(t => t.TransactionTags)
             .FirstOrDefaultAsync(t => t.Id == id, ct);
 
         if (updateTransaction is null)
-            return null;
+            throw new NotFoundException($"Транзакция с таким ID {id} не найдена");
 
         var accountExists =await _context.Accounts.AnyAsync(t => t.Id == dto.AccountId, ct);
         var categoryExists = await _context.Categories.AnyAsync(c => c.Id == dto.CategoryId, ct);
@@ -178,7 +185,7 @@ public class TransactionService : ITransactionService
         var existingTagsCount = await _context.Tags.CountAsync(t => uniqueTags.Contains(t.Id), ct);
         
         if (!accountExists || !categoryExists || existingTagsCount != uniqueTags.Count())
-            throw new TransactionBadRequestException("Неверный AccountId, CategoryId или TagIds");
+            throw new ConflictException($"Транзакция с таким AccountId, CategoryId или TagIds уже существует");
         
         
         updateTransaction.Amount = dto.Amount;
@@ -201,7 +208,7 @@ public class TransactionService : ITransactionService
         {
             Id = updateTransaction.Id,
             Amount = dto.Amount,
-            Description = dto.Description,
+            Description = dto.Description ?? "",
             Type = dto.Type,
             AccountId = dto.AccountId,
             AccountName = "", // updateTransaction.Account.Name - это неправильно ведь дынные могли поменяться
@@ -216,10 +223,12 @@ public class TransactionService : ITransactionService
 
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken ct)
+    public async Task DeleteAsync(int id, CancellationToken ct)
     {
         var rowsAffected = await _context.Transactions.Where(t => t.Id == id).ExecuteDeleteAsync(ct);
-        return rowsAffected > 0;
+        
+        if (rowsAffected == 0)
+            throw new NotFoundException($"Транзакция с таким ID {id} не найдена");
     }
 
     public async Task<List<TransactionResponseDto>> GetByAccountAsync(int id, CancellationToken ct)
@@ -241,12 +250,11 @@ public class TransactionService : ITransactionService
                 Name = a.Tag.Name
             }).ToList()
         }).ToListAsync(ct);
-        
     }
 
     public async Task<List<TransactionResponseDto>> GetByCategoryAsync(int id, CancellationToken ct)
     {
-        return await _context.Transactions.Where(c => c.CategoryId == id).Select(tt => new TransactionResponseDto
+        var transactionsByCategory = await _context.Transactions.Where(c => c.CategoryId == id).Select(tt => new TransactionResponseDto
         {
             Id = tt.Id,
             Amount = tt.Amount,
@@ -263,6 +271,8 @@ public class TransactionService : ITransactionService
                 Name = a.Tag.Name
             }).ToList()
         }).ToListAsync(ct);
+
+        return transactionsByCategory;
     }
 
     public Task<List<TransactionResponseDto>> GetByIncomeAsync(CancellationToken ct)
@@ -356,17 +366,17 @@ public class TransactionService : ITransactionService
             }).ToListAsync(ct);
     }
 
-    public async Task<Transaction?> GetEntityByIdAsync(int id, CancellationToken ct)
+    public async Task<Transaction> GetEntityByIdAsync(int id, CancellationToken ct)
     {
         var transaction = await _context.Transactions
             .Include(a => a.Account)
             .Include(c => c.Category)
             .Include(t => t.TransactionTags)
-            .ThenInclude(tt => tt.Tag).FirstOrDefaultAsync(r => r.Id == id);
+            .ThenInclude(tt => tt.Tag).FirstOrDefaultAsync(r => r.Id == id, ct);
 
         if (transaction is null)
         {
-            return null;
+            throw new NotFoundException($"Транзакция с таким ID {id} не найдена");
         }
         
         return transaction;

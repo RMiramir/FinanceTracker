@@ -1,5 +1,6 @@
 ﻿using FinanceTracker.Data;
 using FinanceTracker.DTO.Categories;
+using FinanceTracker.Exceptions;
 using FinanceTracker.Models;
 using FinanceTracker.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -20,19 +21,25 @@ public class CategoryService : ICategoryService
         return await _context.Categories.Select(a => new CategoryResponseDto { Id = a.Id, Name = a.Name }).ToListAsync(ctt);
     }
 
-    public async Task<CategoryResponseDto?> GetByIdAsync(int id, CancellationToken ctt)
+    public async Task<CategoryResponseDto> GetByIdAsync(int id, CancellationToken ctt)
     {
-        return await _context.Categories
+        var category = await _context.Categories
             .Where(c => c.Id == id)
             .Select(c => new CategoryResponseDto { Id = c.Id, Name = c.Name }).FirstOrDefaultAsync(ctt);
+
+        if (category is null)
+            throw new NotFoundException($"Категория с таким ID {id} не найдена");
+
+        return category;
     }
 
     public async Task<CategoryResponseDto> CreateAsync(CreateCategoryDto createCategoryDto, CancellationToken ctt)
     {
         var isCategoryTaken = await _context.Categories.AnyAsync(c => c.Name.ToLower() == createCategoryDto.Name.ToLower(), ctt);
+        
         if (isCategoryTaken)
         {
-            throw new InvalidOperationException("Категория с таким именем уже существует");
+            throw new ConflictException($"Категория с таким именем {createCategoryDto.Name} уже существует");
         }
 
         var category = new Category
@@ -50,13 +57,13 @@ public class CategoryService : ICategoryService
         };
     }
 
-    public async Task<CategoryResponseDto?> UpdateAsync(int id, UpdateCategoryDto updateCategoryDto, // тут использован классический способ обновления без ExecuteUpdateAsync как в AccountService; 
+    public async Task<CategoryResponseDto> UpdateAsync(int id, UpdateCategoryDto updateCategoryDto, // тут использован классический способ обновления без ExecuteUpdateAsync как в AccountService; 
         CancellationToken ctt)
     {
         var category = await _context.Categories.FirstOrDefaultAsync(a => a.Id == id, ctt);
 
         if (category is null)
-            return null;
+            throw new NotFoundException($"Категория с таким ID {id} не найдена");
 
         category.Name = updateCategoryDto.Name;
         await _context.SaveChangesAsync(ctt);
@@ -70,10 +77,11 @@ public class CategoryService : ICategoryService
     }
 
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken ctt)
+    public async Task DeleteAsync(int id, CancellationToken ctt)
     {
         var rowsAffected = await _context.Categories.Where(c => c.Id == id).ExecuteDeleteAsync(ctt);
-
-        return rowsAffected > 0;
+        
+        if (rowsAffected == 0)
+            throw new NotFoundException($"Категория с таким ID {id} не найдена");
     }
 }

@@ -1,6 +1,10 @@
-﻿namespace FinanceTracker.DTO.Categories;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace FinanceTracker.DTO.Categories;
 
 public class CreateCategoryDto
 {
-    public string Name { get; set; }
+    [Required]
+    [StringLength(100, MinimumLength = 2)]
+    public string Name { get; set; } = "";
 }

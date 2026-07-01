@@ -19,18 +19,13 @@ public class TransactionController : ControllerBase
     [HttpGet("all")]
     public async Task<ActionResult<List<TransactionResponseDto>>> GetAll(CancellationToken ct)
     {
-        var response = await _transactionService.GetAllAsync(ct);
-
-        return Ok(response);
+        return Ok(await _transactionService.GetAllAsync(ct));
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<TransactionResponseDto>> GetById([FromRoute] int id, CancellationToken ct)
     {
-        var transaction = await _transactionService.GetByIdAsync(id, ct);
-
-        return Ok(transaction);
-
+        return Ok(await _transactionService.GetByIdAsync(id, ct));
     }
     
     
@@ -43,65 +38,57 @@ public class TransactionController : ControllerBase
         return CreatedAtAction(nameof(GetById), new {id = response.Id}, response);
     }
 
-    [HttpPut("update")]
+    [HttpPut("update/{id:int}")]
     public async Task<ActionResult<TransactionResponseDto>> Update([FromRoute] int id,
         [FromBody] UpdateTransactionDto updateTransactionDto, CancellationToken ct)
     {
-        var response = await _transactionService.UpdateAsync(id, updateTransactionDto, ct);
-        if (response is null)
-        {
-            return BadRequest(new { message = "Транзакция с таким именем не найден" });
-        }
-        
-        return Ok(response);
-
+        return Ok(await _transactionService.UpdateAsync(id, updateTransactionDto, ct));
     }
     
     
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken ct)
     {
-        return await _transactionService.DeleteAsync(id, ct) ? NoContent(): NotFound(new { message = $"Tag с таким Id {id} не найден" });
+        await _transactionService.DeleteAsync(id, ct);
+        return NoContent();
     }
 
-    [HttpGet("getByAccount")]
+    [HttpGet("by-account/{id:int}")]
     public async Task<ActionResult<List<TransactionResponseDto>>> GetByAccount([FromRoute] int id, CancellationToken ct)
     {
-        var listTransactionsByAccount = await _transactionService.GetByAccountAsync(id, ct);
-
-        return Ok(listTransactionsByAccount);
+       return Ok(await _transactionService.GetByAccountAsync(id, ct));
 
     }
 
-    [HttpGet("getByCategory")]
+    [HttpGet("by-category")]
     public async Task<ActionResult<List<TransactionResponseDto>>> GetByCategory(int id, CancellationToken ct)
     {
-        var listTransactionsGetByCategory = _transactionService.GetByCategoryAsync(id, ct);
+        var listTransactionsGetByCategory = await _transactionService.GetByCategoryAsync(id, ct);
 
         return Ok(listTransactionsGetByCategory);
     }
 
-    [HttpGet("getByIncome")]
+    [HttpGet("by-income")]
     public async Task<ActionResult<List<TransactionResponseDto>>> GetByIncome(CancellationToken ct)
     {
 
-        var listTransactionGetByIncome = _transactionService.GetByIncomeAsync(ct);
+        var listTransactionGetByIncome = await _transactionService.GetByIncomeAsync(ct);
 
         return Ok(listTransactionGetByIncome);
 
     }
     
-    [HttpGet("getByExpense")]
-    public async Task<ActionResult<List<TransactionResponseDto>>> GetByExpense(int id, CancellationToken ct)
+    [HttpGet("by-expense")]
+    public async Task<ActionResult<List<TransactionResponseDto>>> GetByExpense(CancellationToken ct)
     {
 
-        var listTransactionGetByExpense = _transactionService.GetByExpenseAsync(ct);
+        var listTransactionGetByExpense = await _transactionService.GetByExpenseAsync(ct);
 
         return Ok(listTransactionGetByExpense);
 
     }
 
-    [HttpGet("getByDate")]
+    [HttpGet("by-date")]
     public async Task<ActionResult<List<TransactionResponseDto>>> GetByDateRange(
         [FromQuery(Name = "from")] DateTime? from = null, // Теперь это не обязательный параметр
         [FromQuery(Name = "to")] DateTime? to = null,   // Если их не передадут, они будут равны null
@@ -113,7 +100,7 @@ public class TransactionController : ControllerBase
         return Ok(await _transactionService.GetByDateRangeAsync(dateFrom, dateTo, ct));
     }
 
-    [HttpGet("getByTag/{id:int}")]
+    [HttpGet("by-tag/{id:int}")]
     public async Task<ActionResult<List<TransactionResponseDto>>> GetByTag([FromRoute] int id, CancellationToken ct)
     {
         var listTransactionGetByTag = await _transactionService.GetByTagAsync(id, ct);

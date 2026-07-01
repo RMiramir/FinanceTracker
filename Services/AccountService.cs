@@ -1,6 +1,7 @@
 ﻿using FinanceTracker.Data;
 using FinanceTracker.DTO;
 using FinanceTracker.DTO.Accounts;
+using FinanceTracker.Exceptions;
 using FinanceTracker.Models;
 using FinanceTracker.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -27,14 +28,19 @@ public class AccountService : IAccountService
         }).ToListAsync(ct);
     }
 
-    public async Task<AccountResponseDto?> GetByIdAsync(int id, CancellationToken ct)
+    public async Task<AccountResponseDto> GetByIdAsync(int id, CancellationToken ct)
     {
-        return await _context.Accounts.Where(a => a.Id == id).Select(a => new AccountResponseDto
+        var acc = await _context.Accounts.Where(a => a.Id == id).Select(a => new AccountResponseDto
         {
             Id = a.Id,
             Name = a.Name,
             Currency = a.Currency
         }).FirstOrDefaultAsync(ct);
+
+        if (acc is null)
+            throw new NotFoundException($"Аккаунт с таким ID {id} не найден");
+
+        return acc;
     }
 
     public async Task<AccountResponseDto> CreateAsync(CreateAccountDto createAccountDto, CancellationToken ct)
@@ -44,7 +50,7 @@ public class AccountService : IAccountService
 
         if (isNameTaken)
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 $"Кошелёк с именем '{createAccountDto.Name}' уже существует");
         }
         var acc = new Account
@@ -61,17 +67,17 @@ public class AccountService : IAccountService
 
     }
 
-    public async Task<AccountResponseDto?> UpdateAsync(int id, UpdateAccountDto updateAccountDto, CancellationToken ct)
+    public async Task<AccountResponseDto> UpdateAsync(int id, UpdateAccountDto updateAccountDto, CancellationToken ct)
     {
         var rowsAffected = await _context.Accounts
             .Where(a => a.Id == id)
             .ExecuteUpdateAsync(t => t
                 .SetProperty(a => a.Name, updateAccountDto.Name)
                 .SetProperty(a => a.Currency, updateAccountDto.Currency), ct);
-
+        
         if (rowsAffected == 0)
         {
-            return null;
+            throw new NotFoundException($"Не удалось обновить аккаунт с ID {id}. Возможно, он не существует.");
         }
 
         return new AccountResponseDto
@@ -83,11 +89,13 @@ public class AccountService : IAccountService
 
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken ct)
+    public async Task DeleteAsync(int id, CancellationToken ct)
     {
         var rowsAffected = await _context.Accounts.Where(a => a.Id == id).ExecuteDeleteAsync(ct);
 
-        return rowsAffected > 0;
+        if (rowsAffected == 0)
+            throw new NotFoundException($"Аккаунт с таким ID {id} не найден");
+        
     }
 
     private static AccountResponseDto MapToDto(Account account)

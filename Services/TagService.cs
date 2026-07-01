@@ -1,7 +1,9 @@
 ﻿using FinanceTracker.Data;
 using FinanceTracker.DTO.Tag;
+using FinanceTracker.Exceptions;
 using FinanceTracker.Models;
 using FinanceTracker.Services.Interfaces;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinanceTracker.Services;
@@ -22,16 +24,20 @@ public class TagService : ITagService
             Id = t.Id,
             Name = t.Name
         }).ToListAsync(ct);
-        
     }
 
-    public async Task<TagResponseDto?> GetByIdAsync(int id, CancellationToken ct)
+    public async Task<TagResponseDto> GetByIdAsync(int id, CancellationToken ct)
     {
-        return await _context.Tags.Where(t => t.Id == id).Select(t => new TagResponseDto
+        var tag = await _context.Tags.Where(t => t.Id == id).Select(t => new TagResponseDto
         {
             Id = t.Id,
             Name = t.Name
         }).FirstOrDefaultAsync(ct);
+
+        if (tag is null)
+            throw new NotFoundException($"Ярлык с таким ID {id} не найден");
+
+        return tag;
     }
 
     public async Task<TagResponseDto> CreateAsync(CreateTagDto dto, CancellationToken ct)
@@ -40,7 +46,7 @@ public class TagService : ITagService
 
         if (isTagTaken)
         {
-            throw new InvalidOperationException("Tag с таким именем уже существует");
+            throw new ConflictException($"Ярлык с таким именем {dto.Name} уже существует");
         }
 
         var newTag = new Tag
@@ -60,12 +66,12 @@ public class TagService : ITagService
 
     }
 
-    public async Task<TagResponseDto?> UpdateAsync(int id, UpdateTagDto dto, CancellationToken ct)
+    public async Task<TagResponseDto> UpdateAsync(int id, UpdateTagDto dto, CancellationToken ct)
     {
         var updateTad = _context.Tags.FirstOrDefault(t => t.Id == id);
 
         if (updateTad is null)
-            return null;
+            throw new NotFoundException($"Ярлык с таким ID {id} не найден");
 
         updateTad.Name = dto.Name;
         await _context.SaveChangesAsync(ct);
@@ -90,11 +96,12 @@ public class TagService : ITagService
         };*/
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken ct)
+    public async Task DeleteAsync(int id, CancellationToken ct)
     {
         var isDeleted = await _context.Tags.Where(t => t.Id == id).ExecuteDeleteAsync(ct);
-        return isDeleted > 0;
 
+        if(isDeleted == 0)
+            throw new NotFoundException($"Ярлык с таким ID {id} не найден");
     }
     
 }

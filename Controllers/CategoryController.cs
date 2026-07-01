@@ -20,17 +20,12 @@ public class CategoryController : ControllerBase
     public async Task<ActionResult<List<CategoryResponseDto>>> GetAll(CancellationToken ctt)
     {
         return Ok(await _categoryService.GetAllAsync(ctt));
-
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<CategoryResponseDto>> GetById([FromRoute] int id, CancellationToken ctt)
     {
-        var category = await _categoryService.GetByIdAsync(id, ctt);
-
-        return category is not null
-            ? Ok(category)
-            : NotFound(new { message = $"Категория с таким ID {id} не существует" });
+        return Ok(await _categoryService.GetByIdAsync(id, ctt));
     }
 
     [HttpPost]
@@ -47,22 +42,15 @@ public class CategoryController : ControllerBase
     public async Task<ActionResult<CategoryResponseDto>> Update([FromRoute] int id, [FromBody] UpdateCategoryDto updateCategoryDto,
         CancellationToken ctt)
     {
-        var updateCategory = await _categoryService.UpdateAsync(id, updateCategoryDto, ctt);
-
-        if (updateCategory is null)
-        {
-            return NotFound(new { message = $"Категория с таким ID {id} не найдена" });
-        }
-
-        return Ok(updateCategory);
+        return Ok(await _categoryService.UpdateAsync(id, updateCategoryDto, ctt));
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken ctt)
     {
-        return await _categoryService.DeleteAsync(id, ctt)
-            ? NoContent()
-            : NotFound(new { message = $"Категория с таким ID {id} не найдена" });
+        await _categoryService.DeleteAsync(id, ctt);
+        
+        return NoContent();
     }
     
     

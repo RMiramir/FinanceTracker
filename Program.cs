@@ -1,6 +1,8 @@
 using FinanceTracker.Data;
+using FinanceTracker.Middlewares;
 using FinanceTracker.Services;
 using FinanceTracker.Services.Interfaces;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -26,6 +28,7 @@ builder.Services.AddScoped<ITransactionService, TransactionService>();
 
 var app = builder.Build();
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseRouting();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -35,6 +38,7 @@ if (app.Environment.IsDevelopment())
     // 3. Включаем красивую витрину Scalar (нужен пакет Scalar.AspNetCore)
     app.MapScalarApiReference();
 }
+
 app.UseHttpsRedirection();
 
 app.MapControllers();

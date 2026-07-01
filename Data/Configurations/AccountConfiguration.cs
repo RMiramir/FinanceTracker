@@ -10,6 +10,8 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
     {
         builder.ToTable("Accounts");
 
+        builder.HasIndex(a => a.Name).IsUnique();
+
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.Name).IsRequired().HasMaxLength(100);

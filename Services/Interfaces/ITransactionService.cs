@@ -7,13 +7,13 @@ public interface ITransactionService
 {
     Task<List<TransactionResponseDto>> GetAllAsync(CancellationToken ct);
 
-    Task<TransactionResponseDto?> GetByIdAsync(int id, CancellationToken ct);
+    Task<TransactionResponseDto> GetByIdAsync(int id, CancellationToken ct);
 
     Task<TransactionResponseDto> CreateAsync(CreateTransactionDto dto, CancellationToken ct);
 
-    Task<TransactionResponseDto?> UpdateAsync(int id, UpdateTransactionDto dto, CancellationToken ct);
+    Task<TransactionResponseDto> UpdateAsync(int id, UpdateTransactionDto dto, CancellationToken ct);
 
-    Task<bool> DeleteAsync(int id, CancellationToken ct);
+    Task DeleteAsync(int id, CancellationToken ct);
 
     Task<List<TransactionResponseDto>> GetByAccountAsync(int id, CancellationToken ct);
 
@@ -27,7 +27,7 @@ public interface ITransactionService
 
     Task<List<TransactionResponseDto>> GetByTagAsync(int tagId, CancellationToken ct);
 
-    Task<Transaction?> GetEntityByIdAsync(int id, CancellationToken ct);
+    Task<Transaction> GetEntityByIdAsync(int id, CancellationToken ct);
 
 
 

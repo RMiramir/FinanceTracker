@@ -26,42 +26,28 @@ public class TagController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<TagResponseDto>> GetById([FromRoute] int id, CancellationToken ct)
     {
-        var response =  await _tagService.GetByIdAsync(id, ct);
-
-        if (response is null)
-            return NotFound(new { message = $"Tag с таким Id {id} не найден" });
-
-        return Ok(response);
+        return Ok(await _tagService.GetByIdAsync(id, ct));
     }
 
     [HttpPost]
     public async Task<ActionResult<TagResponseDto>> Create([FromBody] CreateTagDto createTagDto, CancellationToken ct)
     {
-        try
-        {
-            var created = await _tagService.CreateAsync(createTagDto, ct);
+        var created = await _tagService.CreateAsync(createTagDto, ct);
 
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
-        }
-        catch (InvalidOperationException e)
-        {
-            return BadRequest(new { message = e.Message });
-        }
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
     [HttpPut("{id:int}")]
     public async Task<ActionResult<TagResponseDto>> Update([FromRoute] int id, [FromBody] UpdateTagDto updateTagDto, CancellationToken ct)
     {
-        var updateTag = await _tagService.UpdateAsync(id, updateTagDto, ct);
-        if (updateTag is null)
-            return NotFound(new { message = $"Tag с таким ID {id} не найдена" });
-
-        return Ok(updateTag);
+        return Ok(await _tagService.UpdateAsync(id, updateTagDto, ct));
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
-        return await _tagService.DeleteAsync(id, ct) ? NoContent(): NotFound(new { message = $"Tag с таким Id {id} не найден" });
+        await _tagService.DeleteAsync(id, ct);
+        
+        return NoContent();
     }
 }

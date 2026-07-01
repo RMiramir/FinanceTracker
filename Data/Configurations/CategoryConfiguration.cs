@@ -10,7 +10,10 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
     {
         builder.ToTable("Categories");
 
+        builder.HasIndex(c => c.Name).IsUnique();
+
         builder.HasKey(c => c.Id);
+        
         
         builder.Property(t => t.Name)
             .IsRequired()
